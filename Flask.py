@@ -1,32 +1,19 @@
-from flask import Flask, request, jsonify
 import os
-import nbformat
-from nbconvert import PythonExporter
+from nbconvert.exporters.python import PythonExporter
 
-app = Flask(__name__)
+def convert_notebook_to_python(notebook_filename):
+    notebook_basename = os.path.basename(notebook_filename)
+    notebook_dirname = os.path.dirname(notebook_filename)
+    notebook_basename_no_ext = os.path.splitext(notebook_basename)[0]
+    python_filename = os.path.join(notebook_dirname, notebook_basename_no_ext + '.py')
 
-@app.route('/convert', methods=['POST'])
-def convert():
-    # get the uploaded notebook file
-    notebook_file = request.files['notebook_file']
+    with open(notebook_filename) as f:
+        body = f.read()
 
-    # save the notebook file to disk
-    notebook_filename = notebook_file.filename
-    notebook_file.save(notebook_filename)
-
-    # convert the notebook file to a Python file
-    notebook = nbformat.read(notebook_filename, as_version=4)
     exporter = PythonExporter()
-    body, _ = exporter.from_notebook_node(notebook)
-    python_filename = os.path.splitext(notebook_filename)[0] + '.py'
+    (python_body, resources) = exporter.from_notebook_node(exporter.from_filename(notebook_filename)[0])
+
     with open(python_filename, 'w', encoding='utf-8') as f:
-        f.write(body)
+        f.write(python_body)
 
-    # delete the uploaded notebook file from disk
-    os.remove(notebook_filename)
-
-    # return the name of the converted file to the frontend
-    return jsonify({'input_file': notebook_filename, 'output_file': python_filename})
-
-if __name__ == '__main__':
-    app.run(debug=True)
+    return (notebook_basename, os.path.basename(python_filename))
