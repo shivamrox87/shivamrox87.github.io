@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Convert Jupyter Notebook to Python</title>
+</head>
+<body>
+  <h1>Convert Jupyter Notebook to Python</h1>
+  <form id="upload-form" method="post" enctype="multipart/form-data">
+    <label for="notebook-file">Select a Jupyter Notebook file to upload:</label>
+    <input type="file" id="notebook-file" name="notebook_file" accept=".ipynb">
+    <br>
+    <button type="submit" id="convert-button">Convert to Python</button>
+  </form>
+  <div id="result"></div>
+  <script>
+    const form = document.getElementById('upload-form');
+    const resultDiv = document.getElementById('result');
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const fileInput = document.getElementById('notebook-file');
+      const file = fileInput.files[0];
+      const formData = new FormData();
+      formData.append('notebook_file', file);
+      const convertButton = document.getElementById('convert-button');
+      convertButton.disabled = true;
+      resultDiv.innerHTML = 'Converting...';
+      fetch('/convert', {
+        method: 'POST',
+        body: formData
+      })
+      .then(response => response.json())
+      .then(data => {
+        const inputFilename = data.input_file;
+        const outputFilename = data.output_file;
+        resultDiv.innerHTML = `Converted ${inputFilename} to ${outputFilename}`;
+      })
+      .catch(error => {
+        console.error(error);
+        resultDiv.innerHTML = 'Error converting file';
+      })
+      .finally(() => {
+        convertButton.disabled = false;
+      });
+    });
+  </script>
+</body>
+</html>
